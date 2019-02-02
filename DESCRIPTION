@@ -4,7 +4,7 @@ Title: BCB420 GEO (tissues) Data Project
 Version: 0.1.0
 Date: 2019-02-01s
 Authors@R: c(
-    person(“Cathy”, “Cha”, email = “Cathy.cha@mail.utoronto.ca”, role = c(“ctb”), comment = c(ORCID = "0000-0000-0000-0000”))
+    person(“Cathy”, “Cha”, email = “Cathy.cha@mail.utoronto.ca”, role = c(“ctb”), comment = c(ORCID = "0000-0003-4609-4965”))
     )
 Description: A package to map 18 tissue datasets from NCBI’s GEO database to corresponding 	     HGNC symbols and quantile-normalize them. 
 License: file LICENSE
