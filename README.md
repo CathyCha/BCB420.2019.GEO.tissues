@@ -45,7 +45,7 @@ This script also returns a character vector of the Illumina probe ID's which wil
 
 ---- 
 
-## 4 Mapping ENSEMBL IDs to HGNC symbols
+## 4 Mapping Probe IDs to HGNC symbols
 
 #### Preparations: packages, functions, files
 
@@ -57,7 +57,58 @@ BiocManager::install("illuminaHumanv4.db", version = "3.8")
 library("illuminaHumanv4.db")
 ```
 
-Using the vector of probe ID's from the data sourcing script (**'GEO_tissues_data_download.R'**), we will 
+Using the vector of probe ID's from the data sourcing script (**'GEO_tissues_data_download.R'**), we will remove any duplicates in probeID ...
+
+```R
+probeID <- MyexprNames 
+length(probeID)  #699328 probe ID's extracted from the ~20 datasets
+probeID <- unique(MyexprNames)
+length(probeID)  #79261 unique probe ID's
+```
+
+... and map the probeID's to HGNC symbols using the **'illuminaHumanv4.db`** ...
+
+```R
+HUGOgeneAnnot <- data.frame(mapIds(illuminaHumanv4.db, probeID, "SYMBOL","PROBEID"))
+colnames(HUGOgeneAnnot) <- "hgnc_symbol"
+
+> head(HUGOgeneAnnot)
+#             hgnc_symbol
+#ILMN_1343291      EEF1A1
+#ILMN_1343295       GAPDH
+#ILMN_1651199        <NA>
+#ILMN_1651209    SLC35E2A
+#ILMN_1651210        <NA>
+#ILMN_1651221      EFCAB1
+
+nrow(HUGOgeneAnnot)  #79,261
+
+```
+
+... which returns a database with row names as the illumina probeID's and each cell in the row corresponds to the HGNC symbol it corresponds to. 
+
+
+```R
+sum(is.na(HUGOgeneAnnot)) #43539 probe ID's not mapped to HGNC symbol (from total 79261) = 
+```
+
+Only ~55% of the probe Id's from the 18 datasets successfully mapped to a HGNC symbol... this is not that great so we will try to map as many of the probe ID's as possible using additional mapping techniques. 
+
+First I will collect all the probe ID's that don't have a corresponding symbol. 
+
+```R
+
+```
+
+1. Mapping to synonyms
+```R
+
+```
+
+2. Mapping to previous
+```R
+
+```
 
 ---- 
 
