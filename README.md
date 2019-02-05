@@ -259,11 +259,40 @@ sum(duplicated(HUGOgeneAnnot$illumina_humanht_12_v4)) #5995 duplicate probe ID's
 #probe ID ILMN_3304413 is associated with 3 different hgnc symbols - PRAMEF1, PRAMEF2, PRAMEF14
 ```
 
-To clean this data up and easy to read, we will collect all hgnc symbols that map to each probe ID. 
+To clean this data up and make it easy to read, we will collect all hgnc symbols that map to each probe ID. 
 For the duplicated probe ID's in the data, we will collect all the corresponding hgnc symbols and map them in a list to it's corresponding probe ID.
 
 ```R
+#solve duplicate probe ID
+sel <- duplicated(HUGOgeneAnnot$illumina_humanht_12_v4)
+#save a new dataframe with just the duplicated probe ID's
+dupp <- HUGOgeneAnnot[sel,]
+nrow(dupp) #5995 
 
+#make a final dataframe with only unique probe ID's
+HUGOgeneAnnotFINAL <- HUGOgeneAnnot[!sel,] 
+nrow(HUGOgeneAnnotFINAL) #42894 - 36899 = 5995 
+#now add all the saved duplicates back into the dataframe as a list of hgnc symbols 
+
+for (i in seq_along(dupp$illumina_humanht_12_v4)){
+  #returns all the hgnc symbols with 
+  probe <- dupp$illumina_humanht_12_v4[i]
+  list <- HUGOgeneAnnot[HUGOgeneAnnot$illumina_humanht_12_v4 == dupp$illumina_humanht_12_v4[i],]$hgnc_symbol
+  list <- paste(list, collapse = " ")
+  HUGOgeneAnnotFINAL[which(HUGOgeneAnnotFINAL$illumina_humanht_12_v4 == probe),]$hgnc_symbol <- list
+}
+
+#result
+> HUGOgeneAnnotFINAL[c(7,9,11),]
+#   illumina_humanht_12_v4          hgnc_symbol
+#11           ILMN_1652677       FAM89A MIR1182
+#16           ILMN_1651606       MAGED4 MAGED4B
+#23           ILMN_1652982 NPIPB5 NPIPB4 NPIPB3
+
+#all hgnc symbols corresponding to a probe ID are listed 
+
+nrow(HUGOgeneAnnotFINAL)
+#the final mapping has 36899 probe ID's with it's corresponding hgnc symbol/s
 ```
 
 ---- 
