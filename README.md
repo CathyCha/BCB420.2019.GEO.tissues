@@ -243,6 +243,7 @@ HUGOgeneAnnot <- HUGOgeneAnnot[!dupID,]
 nrow(HUGOgeneAnnot) #42894 confirmed that we removed out all the duplicate rows
 ```
 
+
 However, there are still duplicated probe ID's. This is because there were multiple hgnc's recorded for that particular probe ID
 ```R
 sum(duplicated(HUGOgeneAnnot$illumina_humanht_12_v4)) #5995 duplicate probe ID's still in the data
@@ -300,11 +301,66 @@ nrow(HUGOgeneAnnotFINAL)
 #the final mapping has 36899 probe ID's with it's corresponding hgnc symbol/s
 ```
 
+Our final mapping coverage can be estimated to be greater than 95%. 
+With biomaRt we returned ~94.5% coverage, and with additional mappings with illuminaHumanv4.db, we can conclude that our mapping is greater than 95%. 
+
+The exact coverage was tricky to calculate because of duplicate probe ID's and multiple HGNC symbols mapping to a single probe ID.
+
+TODO: save the mapping
+
 ---- 
 
 # 5 Data statistics (quantile normalization)
 
 ----
+
+Quantile normalize all the expression matrices for the datasets
+```R
+GSE64670Exp <- normalize.quantiles(exprs(GSE64670))
+GSE57820Exp <- normalize.quantiles(exprs(GSE57820))
+GSE61853Exp <- normalize.quantiles(exprs(GSE61853))
+GSE45643Exp <- normalize.quantiles(exprs(GSE45643))
+GSE29782Exp <- normalize.quantiles(exprs(GSE29782))
+GSE55924Exp <- normalize.quantiles(exprs(GSE55924))
+GSE54167Exp <- normalize.quantiles(exprs(GSE54167))
+GSE27411Exp <- normalize.quantiles(exprs(GSE27411))
+GSE52515Exp <- normalize.quantiles(exprs(GSE52515))
+GSE42529Exp <- normalize.quantiles(exprs(GSE42529))
+GSE11701Exp <- normalize.quantiles(exprs(GSE11701))
+GSE38823Exp <- normalize.quantiles(exprs(GSE38823))
+GSE54293Exp <- normalize.quantiles(exprs(GSE54293))
+GSE47363Exp <- normalize.quantiles(exprs(GSE47363))
+GSE60317Exp <- normalize.quantiles(exprs(GSE60317))
+GSE44240Exp <- normalize.quantiles(exprs(GSE44240))
+GSE25101Exp <- normalize.quantiles(exprs(GSE25101))
+GSE51220Exp <- normalize.quantiles(exprs(GSE51220))
+```
+
+Then plot them as a line graph to observe...
+
+```R
+plot(density(GSE64670Exp),col="dodgerblue", main = "")
+title(main = "Quantile Normalization of 20 GEO datasets")
+lines(density(GSE57820Exp),col="deepskyblue")
+lines(density(GSE61853Exp),col="dodgerblue4")
+lines(density(GSE45643Exp),col="darkslategray1")
+lines(density(GSE29782Exp),col="darkturquoise")
+lines(density(GSE55924Exp),col="darkslategray1")
+lines(density(GSE54167Exp),col="deepskyblue4")
+lines(density(GSE27411Exp),col="blue1")
+lines(density(GSE52515Exp),col="darkblue")
+lines(density(GSE42529Exp),col="cadetblue4")
+lines(density(GSE11701Exp),col="darkcyan")
+lines(density(GSE38823Exp),col="cadetblue3")
+lines(density(GSE54293Exp),col="aquamarine1")
+lines(density(GSE47363Exp),col="blue3")
+lines(density(GSE60317Exp),col="cornflowerblue")
+lines(density(GSE44240Exp),col="cyan4")
+lines(density(GSE25101Exp),col="deepskyblue3")
+lines(density(GSE51220Exp),col="dodgerblue")
+```
+![](./inst/img/Rplot.png)
+
 
 # 6 Annotating gene sets with GEO data 
 
@@ -333,13 +389,19 @@ sel <- (HUGOgeneAnnot$Gene %in% xSet)
 xSetProbes <- HUGOgeneAnnot[sel,]
 
 # Statistics:
-length(xSetProbes) #83 
+nrow(xSetProbes) #142
+
+
+# which example genes are not in our mapping?
+x <- which( ! (xSet %in% HUGOgeneAnnot$hgnc_symbol))
+cat(sprintf("\t%s\t(%s)\n", HGNC[xSet[x], "sym"], HGNC[xSet[x], "name"]))
+
+#	BORCS8	(BLOC-1 related complex subunit 8)
+# LAMP1	(lysosomal associated membrane protein 1)
 ``` 
 
 
 ## 7 References
 
-Referenced the code from this Biostar's thread for part 4 (mapping to HGNC symbols)
-https://www.biostars.org/p/109248/?fbclid=IwAR2kRB7vxGayHMvON4Zjvtaf_Wjw4xTwrVNte-qlwtKRzo8B-EdEhkeZkCs#109250
 
 
