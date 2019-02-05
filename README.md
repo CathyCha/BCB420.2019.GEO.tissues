@@ -7,6 +7,41 @@
 
 This package will download ~20 datasets from NCBI's GEO repository and map them to HGNC symbols, quantile normalize the experiments to produce data statistics and annotate a sample gene set. 
 
+In this package... 
+```R
+ --BCB420.2019.GEO.tissues/
+   |__.gitignore
+   |__.Rbuildignore
+   |__.Rhistory
+   |__BCB420.2019.GEO.tissues.Rproj
+   |__DESCRIPTION
+   |__dev/
+      |__rptTwee.R
+      |__toBrowser.R                      # display .md files in your browser
+   |__inst/
+      |__extdata/
+         |__probe2sym.RData               # ILLUMINA ID to HGNC symbol mapping tool
+         |__test_lseq.dat
+      |__img/                             # image sources for .md document
+         |__QQplot.png
+         |__Rplot.png           
+      |__scripts/
+         |__Geo_tissues_data_download.R   # script for downloading source files 
+   |__LICENSE
+   |__man/
+      |__lseq.Rd
+   |__NAMESPACE
+   |__R/
+      |__lseq.R
+      |__zzz.R
+   |__README.md                            # this file
+   |__tests/
+      |__testthat.R
+      |__testthat/
+         |__helper-functions.R
+         |__test_lseq.R
+```
+
 ----
 
 ## 2 GEO Data
@@ -428,6 +463,7 @@ From linearity of the QQplot points we can assume that the dataset for GSE64670 
 
 QQplots can be repeated for all datasets (~20) to observe the disribution.
 
+
 # 6 Annotating gene sets with GEO data 
 
 ---- 
@@ -462,12 +498,11 @@ nrow(xSetProbes) #142
 x <- which( ! (xSet %in% HUGOgeneAnnot$hgnc_symbol))
 cat(sprintf("\t%s\t(%s)\n", HGNC[xSet[x], "sym"], HGNC[xSet[x], "name"]))
 
-#	BORCS8	(BLOC-1 related complex subunit 8)
+# BORCS8	(BLOC-1 related complex subunit 8)
 # LAMP1	(lysosomal associated membrane protein 1)
+#
+# These proteins were probably not part of the experiment datasets collected
 ``` 
-
-
-## 7 References
 
 
 
