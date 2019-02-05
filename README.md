@@ -13,7 +13,29 @@ This package will download ~20 datasets from NCBI's GEO repository and map them 
 
 The Gene Expression Omnibus (GEO) provided by NCBI, is a public repository for genomic data submitted by the research community. Datasets can be downloaded manually as SOFT files or MINiML files. The data download can also be downloaded in a script using the GEOquery package in Bioconductor. 
 
+
+#### Method 1 - script which uses getGEO to download the the source data
+
 When downloaded using the getGEO function, the dataset gets saved as a Bioconductor Expression Set class (see [Bioconductor's Expression Set Class documentation](https://www.bioconductor.org/packages/3.7/bioc/vignettes/Biobase/inst/doc/ExpressionSetIntroduction.pdf) for more information) which includes the title of the experiment, experiment data, assay data, feature data, and many more features of the experiment conducted.
+
+The script **`Geo_tissues_data_download.R`** (found in "/inst/script/Geo_tissues_data_download.R") will include instructions on how to download the 18 tissue datasets from the GEO NCBI database using the **`getGEO()`** function from the GEOquery package. You simply need to source this script and all the data will be available on your environment.
+
+The **`getGEO()`** function downloads a .gz file from the dataset corresponding to the input accession ID. THe .gz is a compressed file that contains a .txt file that is further read into R as a Bioconductor Expression Set class
+
+It will return a character vector of the Illumina probe ID's (called **`MyexprNames`**) which will be used later to map the ID's to its matching HUGO symbol and each experiment dataset as an expression set named by its accession ID. 
+
+#### Method 2 - Manual download from NCBI GEO using accession ID 
+
+If you want to manually download all the files from NCBI GEO you can follow the below instructions. 
+
+To download the source datasets from NCBI GEO... : 
+
+1. Navigate to [NCBI GEO](https://www.ncbi.nlm.nih.gov/geo/)
+2. Search "GSE64670"
+3. Download the Series Matrix File(s) under the Download family sub header
+4. Uncompress the file and place it into a sister directory of your working directory which is called data. 
+5. Repeats steps 2-4 for the following accession ID's: GSE57820, GSE61853, GSE45643, GSE29782, GSE55924, GSE54167, GSE27411, GSE52515, GSE42529, GSE11701, GSE38823, GSE54293, GSE47363, GSE60317, GSE44240, GSE25101, GSE51220
+6. Load the .txt files into the R environment using TODO:
 
 ----
 
@@ -41,13 +63,31 @@ if (! require(GEOquery, quietly=TRUE)) {
 }
 ```
 
-The script **`Geo_tissues_data_download.R`** will include instructions on how to download the 18 tissue datasets from the GEO NCBI database using the **`getGEO()`** function from the GEOquery package.
+We will also need the biomaRt package and illuminaHumanv4.db object to map our probe ID's to HGNC symbols.
 
-The **`getGEO()`** function downloads a .gz file from the dataset corresponding to the input accession ID. THe .gz is a compressed file that contains a .txt file that is further read into R as a Bioconductor Expression Set class
+```R
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("biomaRt", version = "3.8")
 
-It will return a vector of expression sets. 
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("illuminaHumanv4.db", version = "3.8")
+library("illuminaHumanv4.db")
+```
 
-This script also returns a character vector of the Illumina probe ID's which will be used later to map the ID's to its matching HUGO symbol.
+And lastly, we will need the preprocessCore package for quantile normalization.
+
+```R
+if (! require(preprocessCore, quietly=TRUE)) {
+  if (! exists("biocLite")) {
+    source("https://bioconductor.org/biocLite.R")
+  }
+  biocLite("preprocessCore")
+  library(preprocessCore)
+}
+```
+
 
 ---- 
 
@@ -55,7 +95,7 @@ This script also returns a character vector of the Illumina probe ID's which wil
 
 #### Preparations: packages, functions, files
 
-Using the vector of probe ID's from the data sourcing script (**'GEO_tissues_data_download.R'**), we will remove any duplicates in probeID ...
+Using the vector of probe ID's called **`MyexprNames`** created from the data sourcing script (**'GEO_tissues_data_download.R'**), we will remove any duplicates in probeID ...
 
 ```R
 probeID <- MyexprNames 
@@ -101,14 +141,14 @@ sum(HUGOgeneAnnot$hgnc_symbol == "")  # there are 7532 probe Id's that did not g
 
 ```
 
-Only ~94.5% of the probe Id's from the 18 datasets successfully mapped to a HGNC symbol... to try to map the remaining 5.5% we will try alternative approaches. 
-
+Only ~94.5% of the probe Id's from the 18 datasets successfully mapped to a HGNC symbol, to try to map the remaining 5.5% we will attempt alternative approaches. 
 
 #### Mapping probe ID's that don't have HGNC symbols
 
 First I will collect all the probe ID's that don't have a corresponding symbol. 
 
 ```R
+sum(HUGOgeneAnnot$hgnc_symbol == "") #7532 probe ID's with empty HGNC symbols
 sel <- HUGOgeneAnnot$hgnc_symbol == ""
 noSym <- HUGOgeneAnnot[sel,]
 nrow(noSym) #7532, confirmed that we collected all empty HGNC rows
@@ -124,15 +164,7 @@ HGNCmatch <- HGNC[HGNCsyn,] #no matches
 ```
 
 #### 2. Mapped to illuminaHumanv4.db 
-An alternative method to map our Illumina ID's to HUGO symbol's using the Bioconductor object **'illuminaHumanv4.db'** (documentation for the object can be read from [here](http://bioconductor.org/packages/release/data/annotation/manuals/illuminaHumanv4.db/man/illuminaHumanv4.db.pdf)) which maps Illumina ID's to its matching HUGO symbol. This object is outdated as is used HGNC symbol data from 2015, which is why it was not used initially. 
-
-This package will be downloaded via BiocManager as it is also a Bioconductor object. 
-```R
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install("illuminaHumanv4.db", version = "3.8")
-library("illuminaHumanv4.db")
-```
+An alternative method to map our Illumina ID's to HUGO symbol's using the Bioconductor object **'illuminaHumanv4.db'** (documentation for the object can be read from [here](http://bioconductor.org/packages/release/data/annotation/manuals/illuminaHumanv4.db/man/illuminaHumanv4.db.pdf)) which maps Illumina ID's to its matching HUGO symbol. This object is slightly outdated as it used HGNC symbol data from 2015, which is why it was not used initially. 
 
 ```R
 illumID <- noSym$illumina_humanht_12_v4
@@ -141,8 +173,10 @@ illumDBmatch <- data.frame(select(illuminaHumanv4.db,
        columns=c("SYMBOL", "PROBEID"), 
        keytype="PROBEID"))
 
-sum(is.na(illumDBmatch$SYMBOL)) #2706 (7532 - 2706 = 4826) mapped 4826 additional HGNC symbols
-#1.9% not mapped = 98.1% coverage! - pretty good! 
+nrow(illumDBmatch) #12221
+sum(is.na(illumDBmatch$SYMBOL)) #2706 
+#illuminaHumanv4.db produced 12221 mappings of probe ID to hgnc symbols
+#out of the 12,221 there are still 2706 probe ID's that are not matched
 ```
 
 Since the mapping produced from biomaRt and the illuminaHumanv4.db do not have the same number of columns (illumina database mapping did not include the ensembl ID's) and we don't need the ensembl ID's now, we will remove the 3rd row (ensembl ID's) in the HUGOgeneAnnot dataframe and bind the newly found mappings to HUGOgeneAnnot
@@ -170,7 +204,7 @@ Since the mapping produced from biomaRt and the illuminaHumanv4.db do not have t
 all((illumDBmatch$PROBEID %in% HUGOgeneAnnot$illumina_humanht_12_v4), na.rm = FALSE) #TRUE
 #making sure all newly mapped probe ID's are in HUGOgeneAnnot
 
-#removed the 3rd row = ensembl ID's
+#remove the 3rd row = ensembl ID's
 HUGOgeneAnnot[,3] <- NULL
 
 head(HUGOgeneAnnot)
@@ -200,7 +234,7 @@ nrow(HUGOgeneAnnot) #147345 (137830 + 9515 = 147345) confirmed that all rows wer
 #### Clean up data
 
 
-Now the next step is to remove all duplicate probe ID's. Duplicates were recorded because some probe ID's mapped to multiple ensembl ID's and since we removed the row with ensembl ID's, we are not left with multple dulplicate rows in our data frame.
+Now the next step is to remove all duplicate probe ID's. Duplicates were recorded because some probe ID's mapped to multiple ensembl ID's and since we removed the row with ensembl ID's, we are now left with multple dulplicate rows in our data frame.
 
 ```R
 #example
@@ -211,7 +245,7 @@ HUGOgeneAnnot[c(3,4,5),]
 #5           ILMN_1651838        RND1
 ```R
 
-For example, ILMN_1651838 was mapped to RND1 3 times in a row because it corresponded to different ensembl ID's. We don't care about the different ensembl ID's anymore, so we need to only keep unique probe ID's in the data frame.
+For example, ILMN_1651838 was mapped to RND1 3 times in a row because it corresponded to different ensembl ID's. We don't care about the different ensembl ID's anymore, so we need to filter only unique rows in the data frame.
 
 ```R
 #first remove all rows with NA because we don't care about these anymore 
@@ -304,9 +338,15 @@ nrow(HUGOgeneAnnotFINAL)
 Our final mapping coverage can be estimated to be greater than 95%. 
 With biomaRt we returned ~94.5% coverage, and with additional mappings with illuminaHumanv4.db, we can conclude that our mapping is greater than 95%. 
 
-The exact coverage was tricky to calculate because of duplicate probe ID's and multiple HGNC symbols mapping to a single probe ID.
+The exact coverage was tricky to calculate because of duplicate probe ID's and multiple HGNC symbols mapping to a single probe.
 
-TODO: save the mapping
+#### Save the tool
+
+This concludes the construction of our mapping tool and we will now save it as an RData.
+
+```R
+save(HUGOgeneAnnotFINAL, file = file.path("inst", "extdata", "probe2sym.RData"))
+```
 
 ---- 
 
@@ -360,6 +400,10 @@ lines(density(GSE25101Exp),col="deepskyblue3")
 lines(density(GSE51220Exp),col="dodgerblue")
 ```
 ![](./inst/img/Rplot.png)
+
+
+
+
 
 
 # 6 Annotating gene sets with GEO data 
