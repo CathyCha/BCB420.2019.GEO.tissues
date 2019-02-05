@@ -21,7 +21,7 @@ In this package...
    |__inst/
       |__extdata/
          |__probe2sym.RData               # ILLUMINA ID to HGNC symbol mapping tool
-         |__xSetAnnot.tsv                 # annotated example edges
+         |__xSetAnnot.tsv                 # annotated example gene set
          |__test_lseq.dat
       |__img/                             # image sources for .md document
          |__QQplot.png
