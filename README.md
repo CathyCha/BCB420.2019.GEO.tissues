@@ -104,7 +104,7 @@ sum(HUGOgeneAnnot$hgnc_symbol == "")  # there are 7532 probe Id's that did not g
 Only ~94.5% of the probe Id's from the 18 datasets successfully mapped to a HGNC symbol... to try to map the remaining 5.5% we will try alternative approaches. 
 
 
-####Mapping probe ID's that don't have HGNC symbols
+#### Mapping probe ID's that don't have HGNC symbols
 
 First I will collect all the probe ID's that don't have a corresponding symbol. 
 
@@ -114,7 +114,7 @@ noSym <- HUGOgeneAnnot[sel,]
 nrow(noSym) #7532, confirmed that we collected all empty HGNC rows
 ```
 
-####1. Mapping to synonyms & previous symbols in HGNC.RData
+#### 1. Mapping to synonyms & previous symbols in HGNC.RData
 ```R
 #map them to the HGNC.RData file to look for synonyms or previous symbols
 sel <- noSym$ensembl_transcript_id
@@ -123,7 +123,7 @@ HGNCsyn <- sel %in% HGNC$EnsID
 HGNCmatch <- HGNC[HGNCsyn,] #no matches
 ```
 
-####2. Mapped to illuminaHumanv4.db 
+#### 2. Mapped to illuminaHumanv4.db 
 An alternative method to map our Illumina ID's to HUGO symbol's using the Bioconductor object **'illuminaHumanv4.db'** (documentation for the object can be read from [here](http://bioconductor.org/packages/release/data/annotation/manuals/illuminaHumanv4.db/man/illuminaHumanv4.db.pdf)) which maps Illumina ID's to its matching HUGO symbol. This object is outdated as is used HGNC symbol data from 2015, which is why it was not used initially. 
 
 This package will be downloaded via BiocManager as it is also a Bioconductor object. 
@@ -197,7 +197,7 @@ HUGOgeneAnnot <- rbind(HUGOgeneAnnot, illumDBmatch)
 nrow(HUGOgeneAnnot) #147345 (137830 + 9515 = 147345) confirmed that all rows were successful binded
 ```
 
-####Clean up data
+#### Clean up data
 
 
 Now the next step is to remove all duplicate probe ID's. Duplicates were recorded because some probe ID's mapped to multiple ensembl ID's and since we removed the row with ensembl ID's, we are not left with multple dulplicate rows in our data frame.
@@ -281,8 +281,13 @@ for (i in seq_along(dupp$illumina_humanht_12_v4)){
   list <- paste(list, collapse = " ")
   HUGOgeneAnnotFINAL[which(HUGOgeneAnnotFINAL$illumina_humanht_12_v4 == probe),]$hgnc_symbol <- list
 }
+```
 
-#result
+#### Result
+
+Data has been cleaned up so that if a probe has more than one hgnc symbol recorded for that ID, then it will appear as a list. 
+
+```R
 > HUGOgeneAnnotFINAL[c(7,9,11),]
 #   illumina_humanht_12_v4          hgnc_symbol
 #11           ILMN_1652677       FAM89A MIR1182
