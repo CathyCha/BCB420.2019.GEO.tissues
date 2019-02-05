@@ -33,9 +33,20 @@ To download the source datasets from NCBI GEO... :
 1. Navigate to [NCBI GEO](https://www.ncbi.nlm.nih.gov/geo/)
 2. Search "GSE64670"
 3. Download the Series Matrix File(s) under the Download family sub header
-4. Uncompress the file and place it into a sister directory of your working directory which is called data. 
+4. Place it into a sister directory of your working directory which is called data. 
 5. Repeats steps 2-4 for the following accession ID's: GSE57820, GSE61853, GSE45643, GSE29782, GSE55924, GSE54167, GSE27411, GSE52515, GSE42529, GSE11701, GSE38823, GSE54293, GSE47363, GSE60317, GSE44240, GSE25101, GSE51220
-6. Load the .txt files into the R environment using TODO:
+6. Load the .txt files into the R environment using getGEO()
+```R
+#example code for step 6 for GSE64670
+GSE64670 <- getGEO(filename='../data/GSE64670_series_matrix.txt.gz', GSEMatrix=TRUE)
+#repeat for all datasets 
+```
+7. Save a character vector of all the probe ID's from all data sets into **`MyexprNames`**
+```R
+#probe ID's can be retrieved using featureNames()
+MyexprNames <- featureNames(GSE64670)
+#add all the feature names from all datasets into MyexprNames 
+```
 
 ----
 
@@ -354,6 +365,8 @@ save(HUGOgeneAnnotFINAL, file = file.path("inst", "extdata", "probe2sym.RData"))
 
 ----
 
+#### Quantile Normalization
+
 Quantile normalize all the expression matrices for the datasets
 ```R
 GSE64670Exp <- normalize.quantiles(exprs(GSE64670))
@@ -402,9 +415,18 @@ lines(density(GSE51220Exp),col="dodgerblue")
 ![](./inst/img/Rplot.png)
 
 
+#### Quantile-quantile plots - to observe distribution 
 
+```R
+GSE64670log <- log(exprs(GSE64670))
+plot(GSE64670log)
+title(main = "QQplot of GSE64670")
+```
+![](./inst/img/QQplot.png)
 
+From linearity of the QQplot points we can assume that the dataset for GSE64670 (Experiment title: Interstitial fluid flow effect on noninvasive and invasive ERBB2-positive breast cancer cells) is normally distributed.
 
+QQplots can be repeated for all datasets (~20) to observe the disribution.
 
 # 6 Annotating gene sets with GEO data 
 
@@ -429,7 +451,7 @@ xSet <- c("AMBRA1", "ATG14", "ATP2A1", "ATP2A2", "ATP2A3", "BECN1", "BECN2",
           "VPS41", "VTI1B", "YKT6")
 
 #for our annotation we return the corresponding Illumina ID for the sample gene set
-sel <- (HUGOgeneAnnot$Gene %in% xSet)
+sel <- (HUGOgeneAnnot$hgnc_symbol %in% xSet)
 xSetProbes <- HUGOgeneAnnot[sel,]
 
 # Statistics:
