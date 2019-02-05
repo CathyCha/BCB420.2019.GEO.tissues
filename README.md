@@ -21,6 +21,7 @@ In this package...
    |__inst/
       |__extdata/
          |__probe2sym.RData               # ILLUMINA ID to HGNC symbol mapping tool
+         |__xSetAnnot.tsv                 # annotated example edges
          |__test_lseq.dat
       |__img/                             # image sources for .md document
          |__QQplot.png
@@ -504,9 +505,10 @@ cat(sprintf("\t%s\t(%s)\n", HGNC[xSet[x], "sym"], HGNC[xSet[x], "name"]))
 # These proteins were probably not part of the experiment datasets collected
 
 # save the annotated set 
-writeLines(c("a\tb",
-             sprintf("%s\t%s", xSetEdges$a, xSetEdges$b)),
-           con = "xSetEdges.tsv")
+writeLines(c("Probe ID \t HGNC Symbol",
+             sprintf("%s\t%s", xSetProbes$illumina_humanht_12_v4, xSetProbes$hgnc_symbol)),
+           con = "xSetAnnot.tsv")
+
 ``` 
 
 
