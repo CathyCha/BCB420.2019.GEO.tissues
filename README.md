@@ -43,6 +43,8 @@ if (! require(GEOquery, quietly=TRUE)) {
 
 The script **`Geo_tissues_data_download.R`** will include instructions on how to download the 18 tissue datasets from the GEO NCBI database using the **`getGEO()`** function from the GEOquery package.
 
+The **`getGEO()`** function downloads a .gz file from the dataset corresponding to the input accession ID. THe .gz is a compressed file that contains a .txt file that is further read into R as a Bioconductor Expression Set class
+
 It will return a vector of expression sets. 
 
 This script also returns a character vector of the Illumina probe ID's which will be used later to map the ID's to its matching HUGO symbol.
@@ -142,19 +144,127 @@ illumDBmatch <- data.frame(select(illuminaHumanv4.db,
 sum(is.na(illumDBmatch$SYMBOL)) #2706 (7532 - 2706 = 4826) mapped 4826 additional HGNC symbols
 #1.9% not mapped = 98.1% coverage! - pretty good! 
 ```
-Using this database we were able to map 4826 additional probe ID's to HGNC symbols. This results in a total coverage of 98.1%
 
-The remaining 1.9% that were not mapped to an HGNC symbol could be due to (TODO: some probe id's were just not positively mapped to a gene symbol??)
+Since the mapping produced from biomaRt and the illuminaHumanv4.db do not have the same number of columns (illumina database mapping did not include the ensembl ID's) and we don't need the ensembl ID's now, we will remove the 3rd row (ensembl ID's) in the HUGOgeneAnnot dataframe and bind the newly found mappings to HUGOgeneAnnot
+
+```R
+#insert the new mappings into HUGOgeneAnnot 
+> head(illumDBmatch)
+#       PROBEID  SYMBOL
+#1 ILMN_1652967   RDH16
+#2 ILMN_1651899   RPL19
+#3 ILMN_1652768    RPS2
+#4 ILMN_1652580   POLD1
+#5 ILMN_1652649 NECTIN2
+#6 ILMN_1652786    ST13
+
+> head(HUGOgeneAnnot)
+#  illumina_humanht_12_v4 hgnc_symbol ensembl_transcript_id
+#1           ILMN_1652366       NLRP7       ENST00000620820
+#2           ILMN_1652366       NLRP7       ENST00000618995
+#3           ILMN_1651838        RND1       ENST00000309739
+#4           ILMN_1651838        RND1       ENST00000548445
+#5           ILMN_1651838        RND1       ENST00000649147
+#6           ILMN_1651838        RND1       ENST00000553260
+
+all((illumDBmatch$PROBEID %in% HUGOgeneAnnot$illumina_humanht_12_v4), na.rm = FALSE) #TRUE
+#making sure all newly mapped probe ID's are in HUGOgeneAnnot
+
+#removed the 3rd row = ensembl ID's
+HUGOgeneAnnot[,3] <- NULL
+
+head(HUGOgeneAnnot)
+#  illumina_humanht_12_v4 hgnc_symbol
+#1           ILMN_1652366       NLRP7
+#2           ILMN_1652366       NLRP7
+#3           ILMN_1651838        RND1
+#4           ILMN_1651838        RND1
+#5           ILMN_1651838        RND1
+#6           ILMN_1651838        RND1
+#now same number of columns as illumDMmatch
+
+#match the names of the columns for the 2 data frames 
+colnames(illumDBmatch) <- c("illumina_humanht_12_v4", "hgnc_symbol")
+
+#lets remove all the rows with NA for hgnc symbol (those probe ID's are already in 
+#HUGOgeneAnnot so don't have to worry about losing those probe ID's)
+sum(is.na(illumDBmatch)) #2706
+nrow(illumDBmatch) #12221
+illumDBmatch <- na.omit(illumDBmatch)
+nrow(illumDBmatch) #9515 (12221 - 2706 = 9515) confirmed that only the rows with NA were removed
+
+HUGOgeneAnnot <- rbind(HUGOgeneAnnot, illumDBmatch)
+nrow(HUGOgeneAnnot) #147345 (137830 + 9515 = 147345) confirmed that all rows were successful binded
+```
 
 ####Clean up data
 
-Now we will try to clean up the data as many of the probes id's were mapped to the same HGNC multiple times because there were multiple ensembl id's that mapped to the probe (TODO: why?)
+
+Now the next step is to remove all duplicate probe ID's. Duplicates were recorded because some probe ID's mapped to multiple ensembl ID's and since we removed the row with ensembl ID's, we are not left with multple dulplicate rows in our data frame.
+
+```R
+#example
+HUGOgeneAnnot[c(3,4,5),]
+#illumina_humanht_12_v4 hgnc_symbol
+#3           ILMN_1651838        RND1
+#4           ILMN_1651838        RND1
+#5           ILMN_1651838        RND1
+```R
+
+For example, ILMN_1651838 was mapped to RND1 3 times in a row because it corresponded to different ensembl ID's. We don't care about the different ensembl ID's anymore, so we need to only keep unique probe ID's in the data frame.
+
+```R
+#first remove all rows with NA because we don't care about these anymore 
+#it is either a duplicate row of a probe id that we later mapped using illumina.db 
+#or it is simply a probe ID that does not map to an entrez symbol
+nrow(HUGOgeneAnnot)  #147345
+sum(HUGOgeneAnnot$hgnc_symbol == "") #7532 
+#result should be 147345 - 7532 = 139813
+
+#changed all the empty hgnc symbols rows into NA 
+HUGOgeneAnnot[HUGOgeneAnnot$hgnc_symbol=="",]<- NA
+HUGOgeneAnnot <- na.omit(HUGOgeneAnnot)
+nrow(HUGOgeneAnnot) #139813 successfully removed all empty rows 
+sum(is.na(HUGOgeneAnnot$hgnc_symbol)) #no more empty hgnc symbols cells
+```
+
+Now we need to remove all duplicate probe ID's
+```R
+sum(duplicated(HUGOgeneAnnot$illumina_humanht_12_v4)) #102914 duplicated probe ID's 
+
+uniqueProbe <- unique(HUGOgeneAnnot$illumina_humanht_12_v4)
+length(uniqueProbe) #there are 36899 unique probe ID
+
+#Keep only the unique rows (some identical probe ID's map to different hgnc id's)
+dupID <- duplicated(HUGOgeneAnnot)
+sum(dupID, na.rm = TRUE) #there are 96919 duplicate rows
+nrow(HUGOgeneAnnot) - sum(dupID, na.rm = TRUE) #there are 42894 unique rows
+HUGOgeneAnnot <- HUGOgeneAnnot[!dupID,]
+nrow(HUGOgeneAnnot) #42894 confirmed that we removed out all the duplicate rows
+```
+
+However, there are still duplicated probe ID's. This is because there were multiple hgnc's recorded for that particular probe ID
+```R
+sum(duplicated(HUGOgeneAnnot$illumina_humanht_12_v4)) #5995 duplicate probe ID's still in the data
+
+> tail(HUGOgeneAnnot)
+#        illumina_humanht_12_v4 hgnc_symbol
+#1214310           ILMN_3307747  ANKRD20A8P
+#1215610           ILMN_3304413     PRAMEF1
+#1215710           ILMN_3304413     PRAMEF2
+#1215810           ILMN_3304413    PRAMEF14
+#1216010           ILMN_3305899       RPL32
+#1216310           ILMN_3305933   LOC730668
+
+#probe ID ILMN_3304413 is associated with 3 different hgnc symbols - PRAMEF1, PRAMEF2, PRAMEF14
+```
+
+To clean this data up and easy to read, we will collect all hgnc symbols that map to each probe ID. 
+For the duplicated probe ID's in the data, we will collect all the corresponding hgnc symbols and map them in a list to it's corresponding probe ID.
 
 ```R
 
-
 ```
-We are only concerned with the corresponding HGNC symbol for each probe id, so we will remove all duplicates of HGNC symbols
 
 ---- 
 
