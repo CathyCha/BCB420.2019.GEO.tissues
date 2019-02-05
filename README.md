@@ -8,7 +8,7 @@
 This package will download ~20 datasets from NCBI's GEO repository and map them to HGNC symbols, quantile normalize the experiments to produce data statistics and annotate a sample gene set. 
 
 In this package... 
-```R
+```
  --BCB420.2019.GEO.tissues/
    |__.gitignore
    |__.Rbuildignore
@@ -34,7 +34,7 @@ In this package...
    |__R/
       |__lseq.R
       |__zzz.R
-   |__README.md                            # this file
+   |__README.md                            # this files
    |__tests/
       |__testthat.R
       |__testthat/
