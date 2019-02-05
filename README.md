@@ -502,6 +502,11 @@ cat(sprintf("\t%s\t(%s)\n", HGNC[xSet[x], "sym"], HGNC[xSet[x], "name"]))
 # LAMP1	(lysosomal associated membrane protein 1)
 #
 # These proteins were probably not part of the experiment datasets collected
+
+# save the annotated set 
+writeLines(c("a\tb",
+             sprintf("%s\t%s", xSetEdges$a, xSetEdges$b)),
+           con = "xSetEdges.tsv")
 ``` 
 
 
