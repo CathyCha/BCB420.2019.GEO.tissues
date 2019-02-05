@@ -34,7 +34,7 @@ In this package...
    |__R/
       |__lseq.R
       |__zzz.R
-   |__README.md                            # this files
+   |__README.md                            # this file
    |__tests/
       |__testthat.R
       |__testthat/
